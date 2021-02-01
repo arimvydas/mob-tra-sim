@@ -1,5 +1,5 @@
 # mob-traffic-ds
----
+
 Mobile network traffic simulator for anomaly and trend change detection
 
 
@@ -18,7 +18,7 @@ Mobile network traffic simulator for anomaly and trend change detection
 
 
 ## Function library
----
+
 ```
  def trafficds.concat_t_days(a,
                              b,
