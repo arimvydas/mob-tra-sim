@@ -62,3 +62,28 @@ Mobile network traffic simulator for anomaly and trend change detection
       sigma     Standard deviation of lognormal process
       thp_max   Maximum throughput to limit long-tail random throughput values
 ```
+
+```
+  def trafficds.thp_time_func(t,
+                              area_t = '',
+                              thp_max = 10
+                              )       
+  Generates througput temporal evolution: mean value and with lognormal
+  random variations.
+
+  Throughput adds constant value and up to three frequency components: 24,
+  12 and 8 hour cycles.
+
+  Based on publication: S. Wang, X. Zhang, J. Zhang, J. Feng, W. Wang, and
+  K. Xin, ``An Approach for Spatial-Temporal Traffic Modeling in Mobile
+  Cellular Networks," in 2015 27th International Teletraffic Congress,
+  2015, pp. 203-209, doi: 10.1109/ITC.2015.31.
+
+  Parameters
+      t         Time variable (days)
+      area_t    Area type: 'park', 'campus', 'cbd' - central business district, 'average' - default
+      thp_max   Maximum throughput value
+
+  Return values
+      (thp_mean,thp_var)   Throughput mean value and with lognormal random variations
+```
