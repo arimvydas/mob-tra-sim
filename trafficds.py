@@ -31,7 +31,7 @@ Mobile network traffic datasets
 
 import numpy as np
 import pandas as pd
-from scipy.special import erf, erfc, erfinv
+from scipy.special import erf, erfc
 
 
 # Traffic datasets
@@ -44,6 +44,8 @@ ds_traffic = {
               'feknous14_orange_us_fixed',
               'feknous14_orange_us_mobile',
               'xu17',
+              'okic19_2_hour',
+              'okic19_2_min',
 
               # Daily (weekday(workday)/weekend): wkdy/wknd
               'wkdy_trinh17_1', 'wkdy_trinh17_2',
@@ -74,6 +76,8 @@ ds_traffic = {
                'xu17_office',
                'xu17_transport',
                'xu17_entertainment',
+               'okic19_1_dl',
+               'okic19_1_ul',
                'italy_jan',
                'italy_mar',
                'seoul_jan',
@@ -81,6 +85,16 @@ ds_traffic = {
                'feldmann_isp_ce_mar',
                'feldmann_isp_ce_apr',
                'feldmann_isp_ce_jun',
+               'milan13_w1_sid4259',
+               'milan13_w2_sid4259',
+               'milan13_w1_sid4456',
+               'milan13_w2_sid4456',
+               'milan13_w1_sid5060',
+               'milan13_w2_sid5060',
+               'milan13_w1_sid5200',
+               'milan13_w2_sid5200',
+               'milan13_w1_sid5085',
+               'milan13_w2_sid5085'
                ]
 }
 
@@ -156,7 +170,8 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
                         to normal or anomalous traffic trend
     @param max_thp_mbps Maximum normal throughput (Mbps)
     @param coeff_wknd   Weekend traffic multiplier
-    @param week_start
+    @param week_start   Integer number indicating the first day of the week:
+                        0 - Mon, 1 - Tue, 2 - Wed, etc. Default: None - Mon
     @retval Dataframe consisting of daily time index and throughput column
 
     Usage example:
@@ -273,10 +288,10 @@ def thp_time_func(t, area_t='', thp_max=10):
     “An Approach for Spatial-Temporal Traffic Modeling in Mobile Cellular Networks,”
     in 2015 27th International Teletraffic Congress, 2015, pp. 203–209, doi: 10.1109/ITC.2015.31.
 
-
-    @param t      Time variable (days)
-    @param area_t Area type: 'park', 'campus', 'cbd' - central business district,
+    @param t       Time variable (days)
+    @param area_t  Area type: 'park', 'campus', 'cbd' - central business district,
                              'average' - default
+    @param thp_max Maximum throughput value
     @retval (thp_mean, thp_var) Throughput mean value and with lognormal random variations
 
     ______________________________
@@ -372,7 +387,7 @@ def thp_add_lognormal(df, sigma=0.1, thp_max=300):
 
     @param df      Pandas dataframe with traffic throughput data
     @param sigma   Standard deviation of lognormal process
-    @param thp_max Max throughput to limit long-tail random throughput values
+    @param thp_max Maximum throughput to limit long-tail random throughput values
 
     ______________________________
     $Rev:: 2.5.1                 $
