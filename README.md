@@ -1,4 +1,5 @@
 # mob-traffic-ds
+---
 Mobile network traffic simulator for anomaly and trend change detection
 
 
@@ -16,11 +17,13 @@ Mobile network traffic simulator for anomaly and trend change detection
 | 10 | Moreira'20  | Internet download traffic data collected in United States by Federal Communications Commission’s (FCC) Measuring Broadband America (MBA) program before and during COVID-19 pandemic | Average volume of downloaded data per test unit (MB)  | [Moreira'20](https://arxiv.org/abs/2012.09850) |
 
 
+## Function library
+---
 ```
- def trafficds.concat\_t\_days(*a*,
-                               *b*,
-                               *td* = `2` 
-                               )       
+ def trafficds.concat_t_days(a,
+                             b,
+                             td = 2 
+                             )       
   Concatenates daily traffic with smoothing erfc() function.
 
   Parameters
@@ -29,5 +32,33 @@ Mobile network traffic simulator for anomaly and trend change detection
       td   Time step width
 
   Return values
-    Concatenated   array w smoothing functions
+    Concatenated array with smoothing functions
+  
+  
+  def trafficds.thp_add_anomaly(df,
+                                thp_adiff,
+                                astart_day,
+                                aend_day 
+                                )       
+  Add traffic anomaly of specified amplitude at particular time.
+
+  Parameters
+      df           Pandas dataframe with traffic throughput data
+      thp_adiff    Amplitude of traffic anomaly
+      astart_day   Start of anomaly in day units
+      aend_day     End of anomaly in day units
+
+
+ def trafficds.thp_add_lognormal(df,
+                                 sigma = 0.1,
+                                 thp_max = 300 
+                                 )       
+ Add lognormal variations to throughput mean with and without anomaly.
+
+ Parameters
+      df        Pandas dataframe with traffic throughput data
+      sigma     Standard deviation of lognormal process
+      thp_max   Maximum throughput to limit long-tail random throughput values
+
+    
 ```
