@@ -14,3 +14,19 @@ Mobile network traffic simulator for anomaly and trend change detection
 | 8 | Seoul'20  | Week-long Internet traffic datasets from Seoul, South Korea, one from January and one from March 2020, corresponding to normal and COVID-19 affected traffic trends, respectively  | Arbitrary units  | [Cloudflare'20](https://blog.cloudflare.com/covid-19-impacts-on-internet-traffic-seattle-italy-and-south-korea/) |
 | 9 | Feldmann'20  | Week-long time series of traffic volumes from a major Central European Internet service provider representing normal and COVID-19 affected traffic trends   | Normalized aggregated traffic volume per hour  | [Feldmann'20](https://dl.acm.org/doi/10.1145/3419394.3423658) |
 | 10 | Moreira'20  | Internet download traffic data collected in United States by Federal Communications Commission’s (FCC) Measuring Broadband America (MBA) program before and during COVID-19 pandemic | Average volume of downloaded data per test unit (MB)  | [Moreira'20](https://arxiv.org/abs/2012.09850) |
+
+
+
+ def trafficds.concat\_t\_days(*a*,
+                               *b*,
+                               *td* = `2` 
+                               )       
+  Concatenates daily traffic with smoothing erfc() function.
+
+  Parameters
+      a    First daily traffic data array
+      b    Second daily traffic data array
+      td   Time step width
+
+  Return values
+    Concatenated   array w smoothing functions
