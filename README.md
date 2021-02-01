@@ -16,7 +16,7 @@ Mobile network traffic simulator for anomaly and trend change detection
 | 10 | Moreira'20  | Internet download traffic data collected in United States by Federal Communications Commission’s (FCC) Measuring Broadband America (MBA) program before and during COVID-19 pandemic | Average volume of downloaded data per test unit (MB)  | [Moreira'20](https://arxiv.org/abs/2012.09850) |
 
 
-
+```
  def trafficds.concat\_t\_days(*a*,
                                *b*,
                                *td* = `2` 
@@ -30,3 +30,4 @@ Mobile network traffic simulator for anomaly and trend change detection
 
   Return values
     Concatenated   array w smoothing functions
+```
