@@ -33,8 +33,9 @@ Mobile network traffic simulator for anomaly and trend change detection
 
   Return values
     Concatenated array with smoothing functions
+  ```
   
-  
+  ```
   def trafficds.thp_add_anomaly(df,
                                 thp_adiff,
                                 astart_day,
@@ -47,8 +48,9 @@ Mobile network traffic simulator for anomaly and trend change detection
       thp_adiff    Amplitude of traffic anomaly
       astart_day   Start of anomaly in day units
       aend_day     End of anomaly in day units
+```
 
-
+```
  def trafficds.thp_add_lognormal(df,
                                  sigma = 0.1,
                                  thp_max = 300 
@@ -59,6 +61,4 @@ Mobile network traffic simulator for anomaly and trend change detection
       df        Pandas dataframe with traffic throughput data
       sigma     Standard deviation of lognormal process
       thp_max   Maximum throughput to limit long-tail random throughput values
-
-    
 ```
