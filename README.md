@@ -34,7 +34,48 @@ Mobile network traffic simulator for anomaly and trend change detection
   Return values
     Concatenated array with smoothing functions
   ```
-  
+
+  ```
+  def trafficds.combine_traffic(data_seq,
+                                df_traffic,
+                                day_trend = None,
+                                max_thp_mbps = 90,
+                                coeff_wknd = 0.8,
+                                week_start = None 
+                                ) 		
+  Combines daily/weekly traffic patterns into time-referenced datasets.
+
+  Parameters
+      data_seq	    Tuple of column name and number of days or weeks
+      df_traffic	  Dataframe with daily traffic patterns
+      day_trend	   Daily trend – fraction of traffic increase per day, due to normal or anomalous traffic trend
+      max_thp_mbps	Maximum normal throughput (Mbps)
+      coeff_wknd	  Weekend traffic multiplier
+      week_start	  Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: None - Mon
+
+  Return values
+      Dataframe	consisting of daily time index and throughput column
+
+  Usage example:
+      # Normal traffic growth 30% anually
+      normal_inc_day = 0.30 / 365
+
+      # Anomalous trend increase
+      anom_inc_day = 0.2 / 7
+
+      inc_day = 2*7*[normal_inc_day] + 2*7*[anom_inc_day]
+
+      df_gen = combine_traffic([('xu17_residential', 2), # weeks
+                                ('wkdy_trinh17_1', 5),   # days
+                                ('wknd_trinh17_1', 2),   # days
+                                ('wkdy_trinh17_1', 5),   # days
+                                ('wknd_trinh17_1', 2)    # days
+                               ], df, day_trend=inc_day, max_thp_mbps=90,
+                               coeff_wknd=0.8)
+
+  ```
+
+
   ```
   def trafficds.thp_add_anomaly(df,
                                 thp_adiff,
