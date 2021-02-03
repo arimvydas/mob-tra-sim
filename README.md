@@ -2,7 +2,7 @@
 
 Mobile network traffic datasets for anomaly and trend change detection.
 
-## 
+## Data sources
 
 The data represents daily and weekly mobile traffic evolutions recorded by network monitoring systems, per base station or mobile user. The traffic data has been digitized from publicly published papers. The following table contains list of traffic datasets and corresponding references.
 
@@ -28,7 +28,7 @@ The data represents daily and weekly mobile traffic evolutions recorded by netwo
 The following datasets are stored in /data folder:
 - `traffic_normal.csv` - Traffic with normal annual trend  
 - `traffic_covid.csv`  - COVID-19 pandemic affected traffic   
-- `traffic.csv`        - Combine traffic dataset including normal and COVID-19 pandemic traffic  
+- `traffic.csv`        - Combined traffic dataset including normal and COVID-19 pandemic traffic  
 
 The CS data is stored in tabular format: header with field names and comma separated data values.
 
