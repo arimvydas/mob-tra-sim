@@ -1,7 +1,10 @@
 # mob-traffic-ds
 
-Mobile network traffic simulator for anomaly and trend change detection
+Mobile network traffic datasets for anomaly and trend change detection.
 
+## 
+
+The data represents daily and weekly mobile traffic evolutions recorded by network monitoring systems, per base station or mobile user. The traffic data has been digitized from publicly published papers. The following table contains list of traffic datasets and corresponding references.
 
 | Name | Description | Units | Reference |
 | ---- | ----------- | ----- | --------- |
@@ -20,7 +23,34 @@ Mobile network traffic simulator for anomaly and trend change detection
 | Moreira'20  | Internet download traffic data collected in United States by Federal Communications Commission’s (FCC) Measuring Broadband America (MBA) program before and during COVID-19 pandemic | Average volume of downloaded data per test unit (MB)  | [Moreira'20](https://arxiv.org/abs/2012.09850) |
 
 
+## Traffic datasets
+
+The following datasets are stored in /data folder:
+`traffic_normal.csv` - Traffic with normal annual trend
+`traffic_covid.csv`  - COVID-19 pandemic affected traffic 
+`traffic.csv`        - Combine traffic dataset including normal and COVID-19 pandemic traffic
+
+The CS data is stored in tabular format: header with field names and comma separated data values.
+
+The data can be loaded into Python pandas as
+'''
+import pandas as pd
+df = pd.read_csv('data/traffic.csv')
+'''
+
+Fields: 
+t_day
+thp_<<dataset name>>
+thp_<<week day>>_<<dataset name>>
+thp_wkdy_<<dataset name>>
+thp_wknd_<<dataset name>>
+
+Here <<dataset name>> is unique dataset name corresponding to data columns in CSV dataset. <<week day>> indicates day of the week: mon, tue, wed, etc. `t_day` field contains values in range [0.0, ..., 0.99] indicating 10 minute intervals in which 24-hour daytime is divided. Fields beginning with `thp_` contain normalized traffic throughput values in range [0, ..., 1].
+
+
 ## Function library
+
+Python functions for working with traffic data are included into Python file `trafficds.py`. Python version 3.6 or higher is required.
 
 ```
  def trafficds.concat_t_days(a,
@@ -131,3 +161,7 @@ Mobile network traffic simulator for anomaly and trend change detection
   Return values
       (thp_mean,thp_var)   Throughput mean value and with lognormal random variations
 ```
+
+## Examples
+
+Several examples for working with traffic data is available in Jupyter notebook `examples.ipynb`.
