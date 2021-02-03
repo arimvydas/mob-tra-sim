@@ -26,9 +26,9 @@ The data represents daily and weekly mobile traffic evolutions recorded by netwo
 ## Traffic datasets
 
 The following datasets are stored in /data folder:
-`traffic_normal.csv` - Traffic with normal annual trend
-`traffic_covid.csv`  - COVID-19 pandemic affected traffic 
-`traffic.csv`        - Combine traffic dataset including normal and COVID-19 pandemic traffic
+- `traffic_normal.csv` - Traffic with normal annual trend  
+- `traffic_covid.csv`  - COVID-19 pandemic affected traffic   
+- `traffic.csv`        - Combine traffic dataset including normal and COVID-19 pandemic traffic  
 
 The CS data is stored in tabular format: header with field names and comma separated data values.
 
@@ -41,11 +41,11 @@ df = pd.read_csv('data/traffic.csv')
 Data fields: 
 - `t_day`  
 - `thp_<dataset name>`  
-- thp_<week day>_<dataset name>  
-- thp_wkdy_<dataset name>  
-- thp_wknd_<dataset name>  
+- `thp_<week day>_<dataset name>`  
+- `thp_wkdy_<dataset name>`  
+- `thp_wknd_<dataset name>`  
 
-Here <dataset name> is unique dataset name corresponding to data columns in CSV dataset. <week day> indicates day of the week: mon, tue, wed, etc. `t_day` field contains values in range [0.0, ..., 0.99] indicating 10 minute intervals in which 24-hour daytime is divided. Fields beginning with `thp_` contain normalized traffic throughput values in range [0, ..., 1].
+Here `<dataset name>` is unique dataset name corresponding to data columns in CSV dataset. `<week day>` indicates day of the week: mon, tue, wed, etc. `t_day` field contains values in range [0.0, ..., 0.99] indicating 10 minute intervals in which 24-hour daytime is divided. Fields beginning with `thp_` contain normalized traffic throughput values in range [0, ..., 1].
 
 
 ## Function library
@@ -79,12 +79,12 @@ Python functions for working with traffic data are included into Python file `tr
   Combines daily/weekly traffic patterns into time-referenced datasets.
 
   Parameters
-      data_seq	    Tuple of column name and number of days or weeks
-      df_traffic	  Dataframe with daily traffic patterns
-      day_trend	   Daily trend – fraction of traffic increase per day, due to normal or anomalous traffic trend
-      max_thp_mbps	Maximum normal throughput (Mbps)
-      coeff_wknd	  Weekend traffic multiplier
-      week_start	  Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: None - Mon
+      data_seq     Tuple of column name and number of days or weeks
+      df_traffic   Dataframe with daily traffic patterns
+      day_trend    Daily trend – fraction of traffic increase per day, due to normal or anomalous traffic trend
+      max_thp_mbps Maximum normal throughput (Mbps)
+      coeff_wknd   Weekend traffic multiplier
+      week_start   Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: None - Mon
 
   Return values
       Dataframe	consisting of daily time index and throughput column
