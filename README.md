@@ -39,8 +39,8 @@ df = pd.read_csv('data/traffic.csv')
 ```
 
 Data fields: 
-- t_day  
-- thp_<dataset name>  
+- `t_day`  
+- `thp_<dataset name>`  
 - thp_<week day>_<dataset name>  
 - thp_wkdy_<dataset name>  
 - thp_wknd_<dataset name>  
