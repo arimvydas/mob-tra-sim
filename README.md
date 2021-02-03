@@ -33,19 +33,19 @@ The following datasets are stored in /data folder:
 The CS data is stored in tabular format: header with field names and comma separated data values.
 
 The data can be loaded into Python pandas as
-'''
+```
 import pandas as pd
 df = pd.read_csv('data/traffic.csv')
-'''
+```
 
-Fields: 
-t_day  
-thp_<<dataset name>>  
-thp_<<week day>>_<<dataset name>>  
-thp_wkdy_<<dataset name>>  
-thp_wknd_<<dataset name>>  
+Data fields: 
+- t_day  
+- thp_<dataset name>  
+- thp_<week day>_<dataset name>  
+- thp_wkdy_<dataset name>  
+- thp_wknd_<dataset name>  
 
-Here <<dataset name>> is unique dataset name corresponding to data columns in CSV dataset. <<week day>> indicates day of the week: mon, tue, wed, etc. `t_day` field contains values in range [0.0, ..., 0.99] indicating 10 minute intervals in which 24-hour daytime is divided. Fields beginning with `thp_` contain normalized traffic throughput values in range [0, ..., 1].
+Here <dataset name> is unique dataset name corresponding to data columns in CSV dataset. <week day> indicates day of the week: mon, tue, wed, etc. `t_day` field contains values in range [0.0, ..., 0.99] indicating 10 minute intervals in which 24-hour daytime is divided. Fields beginning with `thp_` contain normalized traffic throughput values in range [0, ..., 1].
 
 
 ## Function library
