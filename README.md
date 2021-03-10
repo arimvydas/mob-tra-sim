@@ -29,9 +29,9 @@ The data represents daily and weekly mobile traffic evolutions recorded by netwo
 The following datasets are stored in /data folder:
 - `traffic_normal.csv` - Traffic with normal annual trend  
 - `traffic_covid.csv`  - COVID-19 pandemic affected traffic   
-- `traffic.csv`        - Combined traffic dataset including normal and COVID-19 pandemic traffic  
+- `traffic.csv`        - Combined traffic dataset including normal and COVID-19 pandemic traffic. If dataset size doesn't matter, always use this file
 
-The CS data is stored in tabular format: header with field names and comma separated data values.
+The CSV data is stored in tabular format: header with field names and comma separated data values.
 
 The data can be loaded into Python pandas as
 ```
