@@ -8,10 +8,20 @@ Mobile network traffic datasets
 #
 # @brief
 # ______________________________
-# $Rev:: 2.7.1                 $
+# $Rev:: 2.6.1                 $
 # $Author:: arimvydas          $
 # $Date:: 2021-01-18 13:50:00  $
 # $Notes:: Functions moved from traffic.py     $
+# ______________________________
+# $Rev:: 2.7.1                 $
+# $Author:: arimvydas          $
+# $Date:: 2021-03-17 10:49:00  $
+# $Notes:: Added dataset generation, alpha-stable distribution, updated functions and descriptions  $
+# ______________________________
+# $Rev:: 2.7.2                 $
+# $Author:: arimvydas          $
+# $Date:: 2021-03-22 17:27:00  $
+# $Notes:: Small fixes and addition to traffic dataset  $
 
 #  trafficds - Mobile network traffic datasets
 #  Copyright (C) 2020-2021 Rimvydas Aleksiejunas
@@ -32,7 +42,13 @@ Mobile network traffic datasets
 import numpy as np
 import pandas as pd
 from scipy.special import erf, erfc
+from scipy.stats import levy_stable
+from scipy.interpolate import interp1d
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
+
+# Define location of traffic CSV file
+file_traffic_csv = 'data/traffic.csv'
 
 # Traffic datasets
 ds_traffic = {
@@ -43,7 +59,11 @@ ds_traffic = {
               'feknous14_orange_ds_mobile',
               'feknous14_orange_us_fixed',
               'feknous14_orange_us_mobile',
-              'xu17',
+              'wang15_avg',
+              'wang15_park',
+              'wang15_campus',
+              'wang15_cbd',
+              'xu17_daily',
               'okic19_2_hour',
               'okic19_2_min',
 
@@ -106,7 +126,7 @@ def concat_t_days(a, b, td=2):
     @param a  First daily traffic data array
     @param b  Second daily traffic data array
     @param td Time step width
-    @retval   Concatenated array w smoothing functions
+    @retval   Concatenated array with smoothing functions
 
     ______________________________
     $Rev:: 2.5.1                 $
@@ -160,7 +180,7 @@ def concat_t_days(a, b, td=2):
 
 
 def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
-                    coeff_wknd=0.8, week_start=None):
+                    coeff_wknd=0.8, week_start=0):
     """
     @brief Combines daily/weekly traffic patterns into time-referenced datasets
 
@@ -171,11 +191,14 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
     @param max_thp_mbps Maximum normal throughput (Mbps)
     @param coeff_wknd   Weekend traffic multiplier
     @param week_start   Integer number indicating the first day of the week:
-                        0 - Mon, 1 - Tue, 2 - Wed, etc. Default: None - Mon
+                        0 - Mon, 1 - Tue, 2 - Wed, etc.
     @retval Dataframe consisting of daily time index and throughput column
 
     Usage example:
-        # Normal traffic growth 31% anually
+
+        ##
+
+        # Normal traffic growth 30% anually
         normal_inc_day = 0.30 / 365
 
         # Anomalous trend increase
@@ -201,6 +224,11 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
     $Author:: arimvydas          $
     $Date:: 2020-12-22 15:11:00  $
     $Notes:: Option week_start   $
+    ______________________________
+    $Rev:: 2.6.3                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-03-15 14:46:00  $
+    $Notes:: Updated thp_mult calculation for daily traffic   $
     """
 
     thp_data = []
@@ -208,7 +236,7 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
     week_days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
     # Adjust week start day
-    if week_start is not None:
+    if week_start > 0:
         week_days = week_days[week_start:] + week_days[:week_start]
 
     wknd_idx = np.ravel(np.where(np.isin(week_days, ['sat', 'sun'])))
@@ -251,11 +279,18 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
             #  Traffic multiplier for weekend
             thp_mult = 1.0
 
-            if s[0][:4] == 'wknd':
-                thp_mult = coeff_wknd
-
             c = 'thp_' + s[0]
             for d in range(s[1]):
+
+                if s[0][:4] == 'wknd':
+                    thp_mult = coeff_wknd
+                elif (s[0][:4] != 'wkdy' and
+                      ((iday % (7 - week_start) == 5) or
+                       (iday % (7 - week_start) == 6))):
+                    thp_mult = coeff_wknd
+                else:
+                    thp_mult = 1.0
+
                 thp += thp * day_trend[iday]
                 thp0 = thp
                 thp0 *= thp_mult
@@ -267,6 +302,7 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
         else:
             assert 0, 'Unknown traffic pattern: {}'.format(s[0])
 
+
     # N weeks
     Ndays = int(tot_days / dt)
     tdays = np.arange(0, Ndays) * dt + t0
@@ -277,22 +313,23 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
     return df_gen
 
 
-def thp_time_func(t, area_t='', thp_max=10):
+def thp_time_func(t, area_t=''):
     """
     @brief Generates througput temporal evolution: mean value and with lognormal random variations
 
     Throughput generation: adds constant value and up to three frequency components:
     24, 12 and 8 hour cycles.
 
-    Based on publication: S. Wang, X. Zhang, J. Zhang, J. Feng, W. Wang, and K. Xin,
-    “An Approach for Spatial-Temporal Traffic Modeling in Mobile Cellular Networks,”
-    in 2015 27th International Teletraffic Congress, 2015, pp. 203–209, doi: 10.1109/ITC.2015.31.
+    Use thp_add_randvar() function to add alpha-stable distributed variations.
 
-    @param t       Time variable (days)
-    @param area_t  Area type: 'park', 'campus', 'cbd' - central business district,
-                             'average' - default
-    @param thp_max Maximum throughput value
-    @retval (thp_mean, thp_var) Throughput mean value and with lognormal random variations
+    Based on publication: S. Wang, X. Zhang, J. Zhang, J. Feng, W. Wang, and K. Xin,
+    ``An Approach for Spatial-Temporal Traffic Modeling in Mobile Cellular Networks,"
+    in 2015 27th International Teletraffic Congress, 2015, pp. 203-209, doi: 10.1109/ITC.2015.31.
+
+    @param t         Time variable (days)
+    @param area_t    Area type: 'park', 'campus', 'cbd' - central business district,
+                                'average' - default
+    @retval thp_mean Throughput mean value
 
     ______________________________
     $Rev:: 2.5.1                 $
@@ -302,31 +339,32 @@ def thp_time_func(t, area_t='', thp_max=10):
     ______________________________
     $Rev:: 2.5.2                 $
     $Author:: arimvydas          $
-    $Date:: 2020-03-19 09:20:00  $
+    $Date:: 2020-03-31 09:20:00  $
     $Notes:: t (days) instead of t(h) $
     ______________________________
     $Rev:: 2.5.3                 $
     $Author:: arimvydas          $
     $Date:: 2020-04-02 12:38:00  $
     $Notes:: Added thp_max       $
+    ______________________________
+    $Rev:: 2.6.3                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-03-17 10:46:00  $
+    $Notes:: Only mean throughput left   $
     """
 
-    s = 1.5
     if area_t.lower() == 'park':
         # Park
         a = [351.06, 222.7, 96.24, 0.0]
         p = [3.11, 2.36, 0.0]
-        s = 1.3
     elif area_t.lower() == 'campus':
         # Campus
         a = [323.04, 143.8, 109.4, 38.43]
         p = [2.98, 2.15, 1.0]
-        s = 3.6
     elif area_t.lower() == 'cbd':
         # Central business district (CBD)
         a = [75.72, 47.52, 16.71, 0.0]
         p = [2.56, 1.45, 0.0]
-        s = 2.8
     else:
         # Whole area (average)
         a = [173.9, 89.83, 52.6, 16.68]
@@ -337,19 +375,89 @@ def thp_time_func(t, area_t='', thp_max=10):
         thp_mean += a[i + 1] * np.sin(24 * (i + 1) * np.pi / 12 * t + p[i])
 
     thp_mean /= np.max(thp_mean)
-    s /= 10
 
+    return thp_mean
+
+
+def thp_add_randvar(df, sigma=0.1, thp_max=300, alpha=1.6, beta=1):
+    """
+    @brief Add alpha-stable distributed variations to throughput mean with and without anomaly
+
+    @param df      Pandas dataframe with traffic throughput data
+    @param sigma   Standard deviation of random process
+    @param thp_max Maximum throughput to limit long-tail random throughput values
+    @param alpha   Parameter of alpha-stable distribution, 0 < alpha <= 2
+    @param beta    Parameter of alpha-stable distribution, -1 <= beta <= 1
+
+    ______________________________
+    $Rev:: 2.5.1                 $
+    $Author:: arimvydas          $
+    $Date:: 2020-04-22 18:52:00  $
+    $Notes:: Initial version     $
+    ______________________________
+    $Rev:: 2.5.2                 $
+    $Author:: arimvydas          $
+    $Date:: 2020-04-28 14:36:00  $
+    $Notes:: Updated mean and deviation     $
+    ______________________________
+    $Rev:: 2.6.1                 $
+    $Author:: arimvydas          $
+    $Date:: 2020-09-24 10:39:00  $
+    $Notes:: Option w/o thp_a_mbps    $
+    ______________________________
+    $Rev:: 2.6.2                 $
+    $Author:: arimvydas          $
+    $Date:: 2020-11-30 08:28:00  $
+    $Notes:: Option for sigma=0  $
+    ______________________________
+    $Rev:: 2.6.3                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-02-04 14:37:00  $
+    $Notes:: Alpha-stable distribution  $
+    """
+
+    thp_mean = df.thp_mbps
     thp_var = np.zeros(len(thp_mean))
+
+    if 'thp_a_mbps' in df.columns:
+        thp_a_mean = df.thp_a_mbps
+        thp_a_var = np.zeros(len(thp_mean))
+
     for n in range(len(thp_mean)):
-        # Lognormal mean
-        m_t = np.log(thp_mean[n]) - 0.5 * s ** 2
-        thp_var[n] = np.random.lognormal(mean=m_t, sigma=s, size=1)[0]
 
-        # Limit max value
-        if thp_var[n] > thp_max:
-            thp_var[n] = thp_max
+        # Normal traffic
+        if sigma == 0:
+            thp_var[n] = thp_mean[n]
+        else:
+            thp_var[n] = levy_stable.rvs(alpha=alpha, beta=beta,
+                                         loc=thp_mean[n], scale=sigma,
+                                         size=1)[0]
 
-    return thp_mean, thp_var
+        # Anomalous traffic
+        if 'thp_a_mbps' in df.columns:
+            if sigma == 0:
+                thp_a_var[n] = thp_a_mean[n]
+            else:
+                thp_a_var[n] = levy_stable.rvs(alpha=alpha, beta=beta,
+                                               loc=thp_a_mean[n], scale=sigma,
+                                               size=1)[0]
+
+    # Limit min, max values
+    thp_var[thp_var < 0] = 0
+    thp_var[thp_var > thp_max] = thp_max
+
+    df['thp_var_mbps'] = thp_var
+
+
+    if 'thp_a_mbps' in df.columns:
+
+        # Limit min, max values
+        thp_a_var[thp_a_var < 0] = 0
+        thp_a_var[thp_a_var > thp_max] = thp_max
+
+        df['thp_a_var_mbps'] = thp_a_var
+
+    return
 
 
 def thp_add_anomaly(df, thp_adiff, astart_day, aend_day):
@@ -381,76 +489,251 @@ def thp_add_anomaly(df, thp_adiff, astart_day, aend_day):
     return
 
 
-def thp_add_lognormal(df, sigma=0.1, thp_max=300):
-    """
-    @brief Add lognormal variations to throughput mean with and without anomaly
 
-    @param df      Pandas dataframe with traffic throughput data
-    @param sigma   Standard deviation of lognormal process
-    @param thp_max Maximum throughput to limit long-tail random throughput values
+
+def gen_dataset_weekly(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
+                       std_scaler=True, inc_day=0.3 / 365, thp_mbps=90,
+                       coeff_wknd=0.8, week_start=0):
+    """
+    @brief Generates traffic datasets from weekly values for training neural network models
+
+    @param nweeks       Number of weeks to be generated
+    @param sigma        Standard deviation of random process
+    @param thp_max      Maximum throughput to limit long-tail random throughput values
+    @param interp_daily Flag (True/False) if daily interpolation required
+    @param std_scaler   Flag (True/False) in order to apply standard scaler
+    @param inc_day      Traffic trend increase (fraction per day)
+    @param thp_mbps     Maximum normal throughput per day (Mbps)
+    @param coeff_wknd   Weekend traffic multiplier
+    @param week_start   Integer number indicating the first day of the week:
+                        0 - Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+    @retval             Traffic series of size [20, nweeks*7*24] if interp_daily set to True,
+                        [20, nweeks*7*24*6] otherwise
 
     ______________________________
-    $Rev:: 2.5.1                 $
+    $Rev:: 2.6.3                 $
     $Author:: arimvydas          $
-    $Date:: 2020-04-22 18:52:00  $
+    $Date:: 2021-03-12 16:11:00  $
+    $Notes:: Initial version, copied from Jupyter notebook  $
+    """
+
+    data_cols20 = ['xu17',
+                   'xu17_residential',
+                   'xu17_office',
+                   'xu17_transport',
+                   'xu17_entertainment',
+                   'okic19_1_dl',
+                   'okic19_1_ul',
+                   'italy_jan',
+                   'italy_mar',
+                   'seoul_jan',
+                   'seoul_mar',
+                   'feldmann_isp_ce_mar',
+                   'feldmann_isp_ce_apr',
+                   'feldmann_isp_ce_jun',
+                   'milan13_w1_sid4259',
+                   'milan13_w2_sid4259',
+                   'milan13_w1_sid4456',
+                   'milan13_w2_sid4456',
+                   'milan13_w1_sid5060',
+                   'milan13_w2_sid5060'
+                   ]
+
+    df = pd.read_csv(file_traffic_csv)
+
+    inc_day = nweeks * 7 * [inc_day]
+
+    series = np.empty(
+        (20, nweeks * 7 * 24 if interp_daily else nweeks * 7 * 24 * 6))
+    tdays = np.linspace(0, nweeks * 7, nweeks * 7 * 24)
+
+    for i, c in enumerate(data_cols20):
+
+        df_gen = combine_traffic([(c, nweeks),  # weeks
+                                          ], df,
+                                         day_trend=inc_day,
+                                         max_thp_mbps=thp_mbps,
+                                         coeff_wknd=coeff_wknd,
+                                         week_start=week_start)
+
+        thp_add_randvar(df_gen, sigma, thp_max)
+
+        if interp_daily:
+            thp_day = interp1d(df_gen.t_day, df_gen.thp_var_mbps, kind='linear',
+                               fill_value='extrapolate')(tdays)
+        else:
+            thp_day = df_gen.thp_var_mbps.values
+
+        if std_scaler:
+            scaler = StandardScaler()
+            thp_day = scaler.fit_transform(thp_day.reshape(-1, 1)).reshape(1,
+                                                                           -1)
+
+        series[i, :] = thp_day
+
+    return series
+
+
+def gen_dataset_daily(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
+                      std_scaler=True, inc_day=0.3 / 365, thp_mbps=90,
+                      coeff_wknd=0.8, week_start=0):
+    """
+    @brief Generates traffic datasets from daily values for training neural network models
+
+    @param nweeks       Number of weeks to be generated
+    @param sigma        Standard deviation of random process
+    @param thp_max      Maximum throughput to limit long-tail random throughput values
+    @param interp_daily Flag (True/False) if daily interpolation required
+    @param std_scaler   Flag (True/False) in order to apply standard scaler
+    @param inc_day      Traffic trend increase (fraction per day)
+    @param thp_mbps     Maximum normal throughput per day (Mbps)
+    @param coeff_wknd   Weekend traffic multiplier
+    @param week_start   Integer number indicating the first day of the week:
+                        0 - Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+    @retval             Traffic series of size [20, nweeks*7*24] if interp_daily set to True,
+                        [20, nweeks*7*24*6] otherwise
+
+    ______________________________
+    $Rev:: 2.6.3                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-03-15 13:00:00  $
     $Notes:: Initial version     $
     ______________________________
-    $Rev:: 2.5.2                 $
+    $Rev:: 2.6.4                 $
     $Author:: arimvydas          $
-    $Date:: 2020-04-28 14:36:00  $
-    $Notes:: Updated mean and deviation     $
-    ______________________________
-    $Rev:: 2.6.1                 $
-    $Author:: arimvydas          $
-    $Date:: 2020-09-24 10:39:00  $
-    $Notes:: Option w/o thp_a_mbps    $
-    ______________________________
-    $Rev:: 2.6.2                 $
-    $Author:: arimvydas          $
-    $Date:: 2020-11-30 08:28:00  $
-    $Notes:: Option for sigma=0  $
+    $Date:: 2021-03-22 17:15:00  $
+    $Notes:: Added discretized version of [Wang'15] dataset     $
     """
 
-    thp_mean = df.thp_mbps
-    thp_var = np.zeros(len(thp_mean))
 
-    if 'thp_a_mbps' in df.columns:
-        thp_a_mean = df.thp_a_mbps
-        thp_a_var = np.zeros(len(thp_mean))
+    # Daily data columns (#13)
+    data_cols1 =  ['laner12',
+                  'earth12',
+                  'feknous14_orange_ds_fixed',
+                  'feknous14_orange_ds_mobile',
+                  'feknous14_orange_us_fixed',
+                  'feknous14_orange_us_mobile',
+                  'wang15_avg',
+                  'wang15_park',
+                  'wang15_campus',
+                  'wang15_cbd',
+                  'xu17_daily',
+                  'okic19_2_hour',
+                  'okic19_2_min'
+                  ]
 
-    for n in range(len(thp_mean)):
+    # Daily -- weekday columns (#7)
+    wkdy_data_cols = [
+              'wkdy_trinh17_1',
+              'wkdy_trinh17_2',
+              'wkdy_feldmann_isp_ce_mar25',
+              'wkdy_moreira_pre_lock_feb19',
+              'wkdy_moreira_pre_lock_may19',
+              'wkdy_moreira_pre_lock_jul19',
+              'wkdy_moreira_pre_lock_oct19'
+             ]
 
-        #
-        # Lognormal mean
-        #
+    # Daily -- weekend columns (#7)
+    wknd_data_cols = [
+             'wknd_trinh17_1',
+             'wknd_trinh17_2',
+             'wknd_feldmann_isp_ce_feb22',
+             'wknd_moreira_pre_lock_feb19',
+             'wknd_moreira_pre_lock_may19',
+             'wknd_moreira_pre_lock_jul19',
+             'wknd_moreira_pre_lock_oct19'
+             ]
 
-        # Normal traffic
-        if sigma == 0:
-            thp_var[n] = thp_mean[n]
+    df = pd.read_csv(file_traffic_csv)
+
+    inc_day = nweeks * 7 * [inc_day]
+
+    series = np.empty(
+        (13+7, nweeks * 7 * 24 if interp_daily else nweeks * 7 * 24 * 6))
+    tdays = np.linspace(0, nweeks * 7, nweeks * 7 * 24)
+
+    for i in range(13+7):
+
+        if i < 13:
+            c = data_cols1[i]
+            data_cols = nweeks * [(c, 7)]  # days
         else:
-            m_t = np.log(thp_mean[n]) - 0.5*np.log((sigma/thp_mean[n])**2 + 1)
-            thp_var[n] = np.random.lognormal(mean=m_t, sigma=np.sqrt(
-                np.log((sigma / thp_mean[n])**2 + 1)), size=1)[0]
+            a = wkdy_data_cols[i - 13]
+            b = wknd_data_cols[i - 13]
+            data_cols = [(a, 5)]  # days
+            data_cols.append((b, 2)) # days
+            data_cols = nweeks * data_cols
 
-            # Limit max value
-            if thp_var[n] > thp_max:
-                thp_var[n] = thp_max
+        df_gen = combine_traffic(data_cols,
+                                 df,
+                                 day_trend=inc_day,
+                                 max_thp_mbps=thp_mbps,
+                                 coeff_wknd=coeff_wknd,
+                                 week_start=week_start)
 
-        # Anomalous traffic
-        if 'thp_a_mbps' in df.columns:
-            if sigma == 0:
-                thp_a_var[n] = thp_a_mean[n]
-            else:
-                m_t = np.log(thp_a_mean[n]) - 0.5*np.log((sigma/thp_a_mean[n])**2 + 1)
-                thp_a_var[n] = np.random.lognormal(mean=m_t, sigma=np.sqrt(
-                    np.log((sigma / thp_a_mean[n])**2 + 1)), size=1)[0]
-                if thp_a_var[n] > thp_max:
-                    thp_a_var[n] = thp_max
+        thp_add_randvar(df_gen, sigma, thp_max)
 
-    df['thp_var_mbps'] = thp_var
+        if interp_daily:
+            thp_day = interp1d(df_gen.t_day, df_gen.thp_var_mbps, kind='linear',
+                               fill_value='extrapolate')(tdays)
+        else:
+            thp_day = df_gen.thp_var_mbps.values
 
-    if 'thp_a_mbps' in df.columns:
-        df['thp_a_var_mbps'] = thp_a_var
+        if std_scaler:
+            scaler = StandardScaler()
+            thp_day = scaler.fit_transform(
+                thp_day.reshape(-1, 1)).reshape(1, -1)
 
-    return
+        series[i, :] = thp_day
 
+    return series
+
+
+def gen_dataset(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
+                std_scaler=True, inc_day=0.3 / 365, thp_mbps=90,
+                coeff_wknd=0.8, week_start=0):
+    """
+    @brief Generates traffic datasets from daily and weekly values for training neural network models
+
+    @param nweeks       Number of weeks to be generated
+    @param sigma        Standard deviation of random process
+    @param thp_max      Maximum throughput to limit long-tail random throughput values
+    @param interp_daily Flag (True/False) if daily interpolation required
+    @param std_scaler   Flag (True/False) in order to apply standard scaler
+    @param inc_day      Traffic trend increase (fraction per day)
+    @param thp_mbps     Maximum normal throughput per day (Mbps)
+    @param coeff_wknd   Weekend traffic multiplier
+    @param week_start   Integer number indicating the first day of the week:
+                        0 - Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+    @retval             Traffic series of size [40, nweeks*7*24] if interp_daily set to True,
+                        [40, nweeks*7*24*6] otherwise
+
+    ______________________________
+    $Rev:: 2.6.3                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-03-16 09:04:00  $
+    $Notes:: Initial version     $
+    ______________________________
+    $Rev:: 2.6.4                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-03-22 17:16:00  $
+    $Notes:: Added discretized version of [Wang'15] dataset     $
+    """
+
+    series1 = gen_dataset_weekly(nweeks=nweeks, sigma=sigma, thp_max=thp_max,
+                                 interp_daily=interp_daily, std_scaler=std_scaler,
+                                 inc_day=inc_day, thp_mbps=thp_mbps,
+                                 coeff_wknd=coeff_wknd, week_start=week_start)
+
+    series2 = gen_dataset_daily(nweeks=nweeks, sigma=sigma, thp_max=thp_max,
+                                interp_daily=interp_daily, std_scaler=std_scaler,
+                                inc_day=inc_day, thp_mbps=thp_mbps,
+                                coeff_wknd=coeff_wknd, week_start=week_start)
+
+    series = np.vstack([series1, series2])
+
+    # Apply random row index
+    series_rnd = np.take(series, np.random.rand(series.shape[0]).argsort(),
+                         axis=0, out=series)
+
+    return series_rnd
