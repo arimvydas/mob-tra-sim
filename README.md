@@ -90,7 +90,7 @@ Python functions for working with traffic data are included into Python file `tr
                    week_start = -1 means random week start, useful for randmized traffic simulations without weekly cycle   
       seed         Random seed is applied in case week_start = -1  
   Return values
-      Dataframe	consisting of daily time index and throughput column
+      Dataframe consisting of daily time index and throughput column
 
   Usage example:
       # Normal traffic growth 30% anually
@@ -168,7 +168,7 @@ Python functions for working with traffic data are included into Python file `tr
       thp_max Maximum throughput value
 
   Return values
-      (thp_mean,thp_var)   Throughput mean value and with lognormal random variations
+      (thp_mean,thp_var)  Throughput mean value and with lognormal random variations
 ```
 
 ```
@@ -199,7 +199,7 @@ Python functions for working with traffic data are included into Python file `tr
       seed	   Random seed parameter
 
   Return values
-      Traffic	series of size [20, nweeks*7*24] if interp_daily set to True, [20, nweeks*7*24*6] otherwise                                  
+      Traffic series of size [20, nweeks*7*24] if interp_daily set to True, [20, nweeks*7*24*6] otherwise                                  
 ```
 
 ```
@@ -230,7 +230,7 @@ Python functions for working with traffic data are included into Python file `tr
       seed	   Random seed parameter
 
   Return values
-      Traffic	series of size [20, nweeks*7*24] if interp_daily set to True, [20, nweeks*7*24*6] otherwise
+      Traffic series of size [20, nweeks*7*24] if interp_daily set to True, [20, nweeks*7*24*6] otherwise
 ```
 
 ```
@@ -261,7 +261,7 @@ Python functions for working with traffic data are included into Python file `tr
       seed	   Random seed parameter
 
   Return values
-      Traffic	series of size [40, nweeks*7*24] if interp_daily set to True, [40, nweeks*7*24*6] otherwise
+      Traffic series of size [40, nweeks*7*24] if interp_daily set to True, [40, nweeks*7*24*6] otherwise
 ```
 
 ## Examples
