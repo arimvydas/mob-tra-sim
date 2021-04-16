@@ -1,6 +1,6 @@
 # mob-traffic-ds
 
-Mobile network traffic datasets for anomaly and trend change detection.
+Mobile network traffic datasets for anomaly and trend change detection. CSV-based datasets are supported by Python function library. Usage examples are provided for Jupyter Notebook environment.
 
 ## Data sources
 
