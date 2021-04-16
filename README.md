@@ -88,7 +88,7 @@ Python functions for working with traffic data are included into Python file `tr
       coeff_wknd   Weekend traffic multiplier
       week_start   Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc.
                    week_start = -1 means random week start, useful for randmized traffic simulations without weekly cycle   
-      seed	   Random seed is applied in case week_start = -1  
+      seed         Random seed is applied in case week_start = -1  
   Return values
       Dataframe	consisting of daily time index and throughput column
 
