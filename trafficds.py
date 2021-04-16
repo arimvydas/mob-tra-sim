@@ -21,7 +21,7 @@ Mobile network traffic datasets
 # $Rev:: 2.7.2                 $
 # $Author:: arimvydas          $
 # $Date:: 2021-03-22 17:27:00  $
-# $Notes:: Small fixes and addition to traffic dataset  $
+# $Notes:: Small fixes and additions to traffic dataset  $
 
 #  trafficds - Mobile network traffic datasets
 #  Copyright (C) 2020-2021 Rimvydas Aleksiejunas
@@ -180,7 +180,7 @@ def concat_t_days(a, b, td=2):
 
 
 def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
-                    coeff_wknd=0.8, week_start=0):
+                    coeff_wknd=0.8, week_start=0, seed=None):
     """
     @brief Combines daily/weekly traffic patterns into time-referenced datasets
 
@@ -192,6 +192,9 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
     @param coeff_wknd   Weekend traffic multiplier
     @param week_start   Integer number indicating the first day of the week:
                         0 - Mon, 1 - Tue, 2 - Wed, etc.
+                        week_start = -1 means random week start, useful for
+                        randmized traffic simulations without weekly cycle
+    @param seed         Random seed is applied in case week_start = -1
     @retval Dataframe consisting of daily time index and throughput column
 
     Usage example:
@@ -229,6 +232,16 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
     $Author:: arimvydas          $
     $Date:: 2021-03-15 14:46:00  $
     $Notes:: Updated thp_mult calculation for daily traffic   $
+    ______________________________
+    $Rev:: 2.7.1                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-04-15 09:18:00  $
+    $Notes:: Randomized option week_start = -1   $
+    ______________________________
+    $Rev:: 2.7.2                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-04-16 13:06:00  $
+    $Notes:: Random seed option  $
     """
 
     thp_data = []
@@ -240,6 +253,9 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
         week_days = week_days[week_start:] + week_days[:week_start]
 
     wknd_idx = np.ravel(np.where(np.isin(week_days, ['sat', 'sun'])))
+
+    if week_start == -1:
+        np.random.seed(seed)
 
     # Time sampling interval: 10 min in days scale
     dt = 10 / (60 * 24)
@@ -258,6 +274,12 @@ def combine_traffic(data_seq, df_traffic, day_trend=None, max_thp_mbps=90,
 
             # Loop over weeks
             for w in range(s[1]):
+
+                # If randomized week day order, shuffle week days randomly
+                if week_start == -1:
+                    np.random.shuffle(week_days)
+                    wknd_idx = np.ravel(np.where(np.isin(week_days, ['sat', 'sun'])))
+
                 # Add weekly traffic
                 for i, c in enumerate(
                         map(lambda x: 'thp_' + x + '_' + s[0], week_days)):
@@ -379,7 +401,7 @@ def thp_time_func(t, area_t=''):
     return thp_mean
 
 
-def thp_add_randvar(df, sigma=0.1, thp_max=300, alpha=1.6, beta=1):
+def thp_add_randvar(df, sigma=0.1, thp_max=300, alpha=1.6, beta=1, seed=None):
     """
     @brief Add alpha-stable distributed variations to throughput mean with and without anomaly
 
@@ -388,6 +410,7 @@ def thp_add_randvar(df, sigma=0.1, thp_max=300, alpha=1.6, beta=1):
     @param thp_max Maximum throughput to limit long-tail random throughput values
     @param alpha   Parameter of alpha-stable distribution, 0 < alpha <= 2
     @param beta    Parameter of alpha-stable distribution, -1 <= beta <= 1
+    @param seed    Random seed parameter
 
     ______________________________
     $Rev:: 2.5.1                 $
@@ -414,7 +437,14 @@ def thp_add_randvar(df, sigma=0.1, thp_max=300, alpha=1.6, beta=1):
     $Author:: arimvydas          $
     $Date:: 2021-02-04 14:37:00  $
     $Notes:: Alpha-stable distribution  $
+    ______________________________
+    $Rev:: 2.7.1                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-04-16 13:06:00  $
+    $Notes:: Random seed option  $
     """
+
+    np.random.seed(seed)
 
     thp_mean = df.thp_mbps
     thp_var = np.zeros(len(thp_mean))
@@ -493,7 +523,7 @@ def thp_add_anomaly(df, thp_adiff, astart_day, aend_day):
 
 def gen_dataset_weekly(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
                        std_scaler=True, inc_day=0.3 / 365, thp_mbps=90,
-                       coeff_wknd=0.8, week_start=0):
+                       coeff_wknd=0.8, week_start=0, seed=None):
     """
     @brief Generates traffic datasets from weekly values for training neural network models
 
@@ -507,6 +537,7 @@ def gen_dataset_weekly(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
     @param coeff_wknd   Weekend traffic multiplier
     @param week_start   Integer number indicating the first day of the week:
                         0 - Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+    @param seed         Random seed parameter
     @retval             Traffic series of size [20, nweeks*7*24] if interp_daily set to True,
                         [20, nweeks*7*24*6] otherwise
 
@@ -515,6 +546,11 @@ def gen_dataset_weekly(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
     $Author:: arimvydas          $
     $Date:: 2021-03-12 16:11:00  $
     $Notes:: Initial version, copied from Jupyter notebook  $
+    ______________________________
+    $Rev:: 2.7.1                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-04-16 13:06:00  $
+    $Notes:: Random seed option  $
     """
 
     data_cols20 = ['xu17',
@@ -550,13 +586,14 @@ def gen_dataset_weekly(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
     for i, c in enumerate(data_cols20):
 
         df_gen = combine_traffic([(c, nweeks),  # weeks
-                                          ], df,
-                                         day_trend=inc_day,
-                                         max_thp_mbps=thp_mbps,
-                                         coeff_wknd=coeff_wknd,
-                                         week_start=week_start)
+                                  ], df,
+                                 day_trend=inc_day,
+                                 max_thp_mbps=thp_mbps,
+                                 coeff_wknd=coeff_wknd,
+                                 week_start=week_start,
+                                 seed=seed)
 
-        thp_add_randvar(df_gen, sigma, thp_max)
+        thp_add_randvar(df_gen, sigma, thp_max, seed=seed)
 
         if interp_daily:
             thp_day = interp1d(df_gen.t_day, df_gen.thp_var_mbps, kind='linear',
@@ -576,7 +613,7 @@ def gen_dataset_weekly(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
 
 def gen_dataset_daily(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
                       std_scaler=True, inc_day=0.3 / 365, thp_mbps=90,
-                      coeff_wknd=0.8, week_start=0):
+                      coeff_wknd=0.8, week_start=0, seed=None):
     """
     @brief Generates traffic datasets from daily values for training neural network models
 
@@ -590,6 +627,7 @@ def gen_dataset_daily(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
     @param coeff_wknd   Weekend traffic multiplier
     @param week_start   Integer number indicating the first day of the week:
                         0 - Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+    @param seed         Random seed parameter
     @retval             Traffic series of size [20, nweeks*7*24] if interp_daily set to True,
                         [20, nweeks*7*24*6] otherwise
 
@@ -603,6 +641,11 @@ def gen_dataset_daily(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
     $Author:: arimvydas          $
     $Date:: 2021-03-22 17:15:00  $
     $Notes:: Added discretized version of [Wang'15] dataset     $
+    ______________________________
+    $Rev:: 2.7.1                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-04-16 13:06:00  $
+    $Notes:: Random seed option  $
     """
 
 
@@ -669,9 +712,10 @@ def gen_dataset_daily(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
                                  day_trend=inc_day,
                                  max_thp_mbps=thp_mbps,
                                  coeff_wknd=coeff_wknd,
-                                 week_start=week_start)
+                                 week_start=week_start,
+                                 seed=seed)
 
-        thp_add_randvar(df_gen, sigma, thp_max)
+        thp_add_randvar(df_gen, sigma, thp_max, seed=seed)
 
         if interp_daily:
             thp_day = interp1d(df_gen.t_day, df_gen.thp_var_mbps, kind='linear',
@@ -691,7 +735,7 @@ def gen_dataset_daily(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
 
 def gen_dataset(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
                 std_scaler=True, inc_day=0.3 / 365, thp_mbps=90,
-                coeff_wknd=0.8, week_start=0):
+                coeff_wknd=0.8, week_start=0, seed=None):
     """
     @brief Generates traffic datasets from daily and weekly values for training neural network models
 
@@ -705,6 +749,7 @@ def gen_dataset(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
     @param coeff_wknd   Weekend traffic multiplier
     @param week_start   Integer number indicating the first day of the week:
                         0 - Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+    @param seed         Random seed parameter
     @retval             Traffic series of size [40, nweeks*7*24] if interp_daily set to True,
                         [40, nweeks*7*24*6] otherwise
 
@@ -718,19 +763,28 @@ def gen_dataset(nweeks=4, sigma=20, thp_max=180, interp_daily=False,
     $Author:: arimvydas          $
     $Date:: 2021-03-22 17:16:00  $
     $Notes:: Added discretized version of [Wang'15] dataset     $
+    ______________________________
+    $Rev:: 2.7.1                 $
+    $Author:: arimvydas          $
+    $Date:: 2021-04-16 13:06:00  $
+    $Notes:: Random seed option  $
     """
 
     series1 = gen_dataset_weekly(nweeks=nweeks, sigma=sigma, thp_max=thp_max,
                                  interp_daily=interp_daily, std_scaler=std_scaler,
                                  inc_day=inc_day, thp_mbps=thp_mbps,
-                                 coeff_wknd=coeff_wknd, week_start=week_start)
+                                 coeff_wknd=coeff_wknd, week_start=week_start,
+                                 seed=seed)
 
     series2 = gen_dataset_daily(nweeks=nweeks, sigma=sigma, thp_max=thp_max,
                                 interp_daily=interp_daily, std_scaler=std_scaler,
                                 inc_day=inc_day, thp_mbps=thp_mbps,
-                                coeff_wknd=coeff_wknd, week_start=week_start)
+                                coeff_wknd=coeff_wknd, week_start=week_start,
+                                seed=seed)
 
     series = np.vstack([series1, series2])
+
+    np.random.seed(seed)
 
     # Apply random row index
     series_rnd = np.take(series, np.random.rand(series.shape[0]).argsort(),
