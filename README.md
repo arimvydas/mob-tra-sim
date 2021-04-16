@@ -88,7 +88,7 @@ Python functions for working with traffic data are included into Python file `tr
       coeff_wknd   Weekend traffic multiplier
       week_start   Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc.
                    week_start = -1 means random week start, useful for randmized traffic simulations without weekly cycle   
-      seed	        Random seed is applied in case week_start = -1  
+      seed	   Random seed is applied in case week_start = -1  
   Return values
       Dataframe	consisting of daily time index and throughput column
 
@@ -121,10 +121,10 @@ Python functions for working with traffic data are included into Python file `tr
   Add traffic anomaly of specified amplitude at particular time.
 
   Parameters
-      df           Pandas dataframe with traffic throughput data
-      thp_adiff    Amplitude of traffic anomaly
-      astart_day   Start of anomaly in day units
-      aend_day     End of anomaly in day units
+      df         Pandas dataframe with traffic throughput data
+      thp_adiff  Amplitude of traffic anomaly
+      astart_day Start of anomaly in day units
+      aend_day   End of anomaly in day units
 ```
 
 ```
@@ -138,12 +138,12 @@ Python functions for working with traffic data are included into Python file `tr
  Add lognormal variations to throughput mean with and without anomaly.
 
  Parameters
-      df        Pandas dataframe with traffic throughput data
-      sigma     Standard deviation of lognormal process
-      thp_max   Maximum throughput to limit long-tail random throughput values
-      alpha	    Parameter of alpha-stable distribution, 0 < alpha <= 2
-      beta	     Parameter of alpha-stable distribution, -1 <= beta <= 1
-      seed	     Random seed parameter      
+      df      Pandas dataframe with traffic throughput data
+      sigma   Standard deviation of lognormal process
+      thp_max Maximum throughput to limit long-tail random throughput values
+      alpha   Parameter of alpha-stable distribution, 0 < alpha <= 2
+      beta    Parameter of alpha-stable distribution, -1 <= beta <= 1
+      seed    Random seed parameter      
 ```
 
 ```
@@ -163,9 +163,9 @@ Python functions for working with traffic data are included into Python file `tr
   2015, pp. 203-209, doi: 10.1109/ITC.2015.31.
 
   Parameters
-      t         Time variable (days)
-      area_t    Area type: 'park', 'campus', 'cbd' - central business district, 'average' - default
-      thp_max   Maximum throughput value
+      t       Time variable (days)
+      area_t  Area type: 'park', 'campus', 'cbd' - central business district, 'average' - default
+      thp_max Maximum throughput value
 
   Return values
       (thp_mean,thp_var)   Throughput mean value and with lognormal random variations
@@ -187,16 +187,16 @@ Python functions for working with traffic data are included into Python file `tr
   Generates traffic datasets from daily values for training neural network models.
 
   Parameters
-      nweeks	      Number of weeks to be generated
-      sigma	       Standard deviation of random process
-      thp_max	     Maximum throughput to limit long-tail random throughput values
-      interp_daily	Flag (True/False) if daily interpolation required
-      std_scaler	  Flag (True/False) in order to apply standard scaler
-      inc_day	     Traffic trend increase (fraction per day)
-      thp_mbps	    Maximum normal throughput per day (Mbps)
-      coeff_wknd	  Weekend traffic multiplier
-      week_start	  Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
-      seed	        Random seed parameter
+      nweeks	   Number of weeks to be generated
+      sigma	   Standard deviation of random process
+      thp_max	   Maximum throughput to limit long-tail random throughput values
+      interp_daily Flag (True/False) if daily interpolation required
+      std_scaler   Flag (True/False) in order to apply standard scaler
+      inc_day	   Traffic trend increase (fraction per day)
+      thp_mbps	   Maximum normal throughput per day (Mbps)
+      coeff_wknd   Weekend traffic multiplier
+      week_start   Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+      seed	   Random seed parameter
 
   Return values
       Traffic	series of size [20, nweeks*7*24] if interp_daily set to True, [20, nweeks*7*24*6] otherwise                                  
@@ -218,16 +218,16 @@ Python functions for working with traffic data are included into Python file `tr
   Generates traffic datasets from weekly values for training neural network models.
 
   Parameters
-      nweeks	      Number of weeks to be generated
-      sigma	       Standard deviation of random process
-      thp_max	     Maximum throughput to limit long-tail random throughput values
-      interp_daily	Flag (True/False) if daily interpolation required
-      std_scaler	  Flag (True/False) in order to apply standard scaler
-      inc_day	     Traffic trend increase (fraction per day)
-      thp_mbps	    Maximum normal throughput per day (Mbps)
-      coeff_wknd	  Weekend traffic multiplier
-      week_start	  Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
-      seed	        Random seed parameter
+      nweeks	   Number of weeks to be generated
+      sigma	   Standard deviation of random process
+      thp_max	   Maximum throughput to limit long-tail random throughput values
+      interp_daily Flag (True/False) if daily interpolation required
+      std_scaler   Flag (True/False) in order to apply standard scaler
+      inc_day	   Traffic trend increase (fraction per day)
+      thp_mbps	   Maximum normal throughput per day (Mbps)
+      coeff_wknd   Weekend traffic multiplier
+      week_start   Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+      seed	   Random seed parameter
 
   Return values
       Traffic	series of size [20, nweeks*7*24] if interp_daily set to True, [20, nweeks*7*24*6] otherwise
@@ -249,16 +249,16 @@ Python functions for working with traffic data are included into Python file `tr
   Generates traffic datasets from daily and weekly values for training neural network models.
 
   Parameters
-      nweeks	      Number of weeks to be generated
-      sigma	       Standard deviation of random process
-      thp_max	     Maximum throughput to limit long-tail random throughput values
-      interp_daily	Flag (True/False) if daily interpolation required
-      std_scaler	  Flag (True/False) in order to apply standard scaler
-      inc_day	     Traffic trend increase (fraction per day)
-      thp_mbps	    Maximum normal throughput per day (Mbps)
-      coeff_wknd	  Weekend traffic multiplier
-      week_start	  Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
-      seed	        Random seed parameter
+      nweeks	   Number of weeks to be generated
+      sigma	   Standard deviation of random process
+      thp_max	   Maximum throughput to limit long-tail random throughput values
+      interp_daily Flag (True/False) if daily interpolation required
+      std_scaler   Flag (True/False) in order to apply standard scaler
+      inc_day	   Traffic trend increase (fraction per day)
+      thp_mbps	   Maximum normal throughput per day (Mbps)
+      coeff_wknd   Weekend traffic multiplier
+      week_start   Integer number indicating the first day of the week: 0 Mon, 1 - Tue, 2 - Wed, etc. Default: 0 - Mon
+      seed	   Random seed parameter
 
   Return values
       Traffic	series of size [40, nweeks*7*24] if interp_daily set to True, [40, nweeks*7*24*6] otherwise
